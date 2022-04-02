@@ -1,0 +1,40 @@
+name: test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  GO111MODULE: on
+  GOPROXY: https://proxy.golang.org
+
+jobs:
+  annotate_test_ci:
+    strategy:
+      matrix:
+        os: [ 'ubuntu-latest', 'macos-latest' ]
+        go: [ 1.17 ]
+
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} @ Go ${{ matrix.go }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: Set up ${{ matrix.go }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: run tests
+        run: |
+          go test -json ./... > test.json
+
+      - name: Annotate tests
+        if: always()
+        uses: guyarb/golang-test-annotations@v0.5.0
+        with:
+          test-results: test.json
